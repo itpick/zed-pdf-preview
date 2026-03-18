@@ -103,12 +103,7 @@ impl PdfDocument {
         text_page.index_at_pos(x_points, y_points, 10.0, 10.0)
     }
 
-    pub fn extract_text_range(
-        &self,
-        page_index: u32,
-        start: usize,
-        end: usize,
-    ) -> Option<String> {
+    pub fn extract_text_range(&self, page_index: u32, start: usize, end: usize) -> Option<String> {
         let page = self.document.page(page_index).ok()?;
         let text_page = page.text().ok()?;
         let (from, to) = (start.min(end), start.max(end));
