@@ -428,7 +428,7 @@ impl PdfView {
         self.current_page = page_count.saturating_sub(1);
     }
 
-    fn render_toolbar(&self, cx: &Context<Self>) -> impl IntoElement {
+    fn render_toolbar(&self, cx: &Context<Self>) -> AnyElement {
         let page_count = self.page_count();
         let current_display = if page_count > 0 {
             format!("Page {} / {}", self.current_page + 1, page_count)
@@ -474,9 +474,10 @@ impl PdfView {
                         .color(Color::Muted),
                 ),
             )
+            .into_any_element()
     }
 
-    fn render_pages(&mut self, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render_pages(&mut self, cx: &mut Context<Self>) -> AnyElement {
         let page_count = self.page_count();
         if page_count == 0 {
             if let Some(error) = &self.load_error {
@@ -500,12 +501,12 @@ impl PdfView {
         self.render_visible_pages(cx);
 
         match self.view_mode {
-            ViewMode::ContinuousScroll => self.render_continuous_scroll(cx).into_any_element(),
-            ViewMode::SinglePage => self.render_single_page(cx).into_any_element(),
+            ViewMode::ContinuousScroll => self.render_continuous_scroll(cx),
+            ViewMode::SinglePage => self.render_single_page(cx),
         }
     }
 
-    fn render_continuous_scroll(&self, _cx: &mut Context<Self>) -> impl IntoElement {
+    fn render_continuous_scroll(&self, _cx: &mut Context<Self>) -> AnyElement {
         let visible_range = self.visible_page_range();
         let scroll_offset = self.scroll_offset;
 
@@ -542,10 +543,10 @@ impl PdfView {
             pages_container = pages_container.child(div().w_full().h(px(spacer_below)));
         }
 
-        div().size_full().overflow_y_hidden().child(pages_container)
+        div().size_full().overflow_y_hidden().child(pages_container).into_any_element()
     }
 
-    fn render_single_page(&self, _cx: &mut Context<Self>) -> impl IntoElement {
+    fn render_single_page(&self, _cx: &mut Context<Self>) -> AnyElement {
         let page_index = self.current_page.min(self.page_count().saturating_sub(1));
         let (page_width, page_height) = self.page_pixel_size(page_index).unwrap_or((600.0, 800.0));
 
@@ -555,6 +556,7 @@ impl PdfView {
             .items_center()
             .justify_center()
             .child(self.render_page_element(page_index, page_width, page_height))
+            .into_any_element()
     }
 
     fn render_page_element(
@@ -562,7 +564,7 @@ impl PdfView {
         page_index: u32,
         page_width: f32,
         page_height: f32,
-    ) -> impl IntoElement {
+    ) -> AnyElement {
         let page_content = if let Some(cached_image) = self.page_cache.get(&page_index) {
             div()
                 .w(px(page_width))
@@ -589,6 +591,7 @@ impl PdfView {
             .shadow_md()
             .rounded(px(PAGE_SHADOW_SIZE))
             .child(page_content)
+            .into_any_element()
     }
 }
 
@@ -623,17 +626,6 @@ impl Render for PdfView {
                         .id("pdf-pages-container")
                         .flex_1()
                         .overflow_hidden()
-                        .on_resize({
-                            let entity = cx.entity().downgrade();
-                            move |size, _window, cx| {
-                                if let Some(view) = entity.upgrade() {
-                                    view.update(cx, |this, cx| {
-                                        this.container_size = Some(size);
-                                        cx.notify();
-                                    });
-                                }
-                            }
-                        })
                         .child(pages),
                 ),
             )
@@ -698,8 +690,8 @@ impl Item for PdfView {
     fn tab_content_text(&self, _: usize, cx: &App) -> SharedString {
         self.pdf_item
             .read(cx)
-            .file_name()
-            .unwrap_or_else(|| "Untitled".to_string())
+            .file_name(cx)
+            .to_string()
             .into()
     }
 

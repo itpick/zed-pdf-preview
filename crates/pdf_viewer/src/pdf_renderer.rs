@@ -1,12 +1,15 @@
 use std::sync::Arc;
 
 use anyhow::Result;
-use gpui::{DevicePixels, RenderImage};
+use gpui::RenderImage;
+use image::Frame;
 use rpdfium::{ArcDocument, ArcLibrary, BitmapFormat, OpenOptions, RenderConfig, RgbaColor};
+use smallvec::SmallVec;
 
 /// Holds a parsed PDF document. All PDF operations go through this struct.
 /// This is Send + Sync (rpdfium's Arc types are thread-safe).
 pub struct PdfDocument {
+    #[allow(dead_code)]
     library: ArcLibrary,
     document: ArcDocument,
 }
@@ -32,7 +35,7 @@ impl PdfDocument {
     /// Detects encrypted PDFs and returns a specific error for them.
     pub fn open(data: Vec<u8>) -> std::result::Result<Self, PdfLoadError> {
         let library = ArcLibrary::new();
-        match ArcDocument::open(library.clone(), data, &OpenOptions::default()) {
+        match ArcDocument::open(&library, data, &OpenOptions::default()) {
             Ok(document) => Ok(Self { library, document }),
             Err(error) => {
                 let error_string = format!("{error}");
@@ -126,10 +129,16 @@ pub struct RenderedPage {
 
 impl RenderedPage {
     pub fn into_render_image(self) -> Arc<RenderImage> {
-        Arc::new(RenderImage::new(vec![gpui::Frame::new(
-            DevicePixels(self.width as i32),
-            DevicePixels(self.height as i32),
-            self.data,
-        )]))
+        // Convert RGBA to BGRA (RenderImage expects BGRA format)
+        let mut bgra_data = self.data;
+        for pixel in bgra_data.chunks_exact_mut(4) {
+            pixel.swap(0, 2); // Swap R and B channels
+        }
+
+        let buffer = image::ImageBuffer::from_raw(self.width, self.height, bgra_data)
+            .expect("pixel buffer dimensions should match");
+
+        let frame = Frame::new(buffer);
+        Arc::new(RenderImage::new(SmallVec::from_const([frame])))
     }
 }

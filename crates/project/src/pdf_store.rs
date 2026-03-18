@@ -11,7 +11,7 @@ use std::num::NonZeroU64;
 use std::path::PathBuf;
 use std::sync::Arc;
 use util::ResultExt;
-use worktree::{LoadedBinaryFile, PathChange, Worktree, WorktreeId};
+use worktree::{LoadedBinaryFile, PathChange, Worktree};
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, PartialOrd, Ord, Eq)]
 pub struct PdfId(NonZeroU64);
@@ -60,11 +60,8 @@ impl PdfItem {
         Some(self.file.as_local()?.abs_path(cx))
     }
 
-    pub fn file_name(&self) -> Option<String> {
-        self.file
-            .path()
-            .file_name()
-            .map(|name| name.to_string_lossy().to_string())
+    pub fn file_name<'a>(&'a self, cx: &'a App) -> &'a str {
+        self.file.file_name(cx)
     }
 
     fn file_updated(&mut self, new_file: Arc<worktree::File>, cx: &mut Context<Self>) {
@@ -88,7 +85,7 @@ impl PdfItem {
         }
     }
 
-    fn reload(&mut self, cx: &mut Context<Self>) {
+    pub fn reload(&mut self, cx: &mut Context<Self>) {
         let Some(local_file) = self.file.as_local() else {
             return;
         };
@@ -263,7 +260,7 @@ impl PdfStore {
         cx.background_spawn(async move {
             Self::wait_for_loading_pdf(loading_watch)
                 .await
-                .map_err(|e| e.cloned())
+                .map_err(|e| anyhow::anyhow!("{}", e))
         })
     }
 
