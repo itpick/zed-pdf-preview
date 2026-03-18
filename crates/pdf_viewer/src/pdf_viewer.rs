@@ -5,21 +5,22 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 
+use anyhow::Context as _;
 use editor::{EditorSettings, items::entry_git_aware_label_color};
 use file_icons::FileIcons;
 use gpui::*;
 use language::File as _;
 use project::pdf_store::PdfItemEvent;
-use project::{PdfItem, Project};
+use project::{PdfItem, Project, ProjectPath};
 use settings::Settings;
 use theme::ThemeSettings;
 use ui::prelude::*;
 use util::ResultExt;
 use util::paths::PathExt;
 use workspace::{
-    ItemSettings, Pane, ToolbarItemLocation, WorkspaceId,
+    ItemId, ItemSettings, Pane, ToolbarItemLocation, Workspace, WorkspaceId,
     invalid_item_view::InvalidItemView,
-    item::{HighlightedText, Item, ProjectItem, TabContentParams},
+    item::{HighlightedText, Item, ProjectItem, SerializableItem, TabContentParams},
 };
 
 actions!(
@@ -823,6 +824,135 @@ impl ProjectItem for PdfView {
     }
 }
 
+impl SerializableItem for PdfView {
+    fn serialized_item_kind() -> &'static str {
+        "PdfView"
+    }
+
+    fn deserialize(
+        project: Entity<Project>,
+        _workspace: WeakEntity<Workspace>,
+        workspace_id: WorkspaceId,
+        item_id: ItemId,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> Task<anyhow::Result<Entity<Self>>> {
+        window.spawn(cx, async move |cx| {
+            let pdf_path = persistence::PDF_VIEWER
+                .get_pdf_path(item_id, workspace_id)?
+                .context("No PDF path found")?;
+
+            let (worktree, relative_path) = project
+                .update(cx, |project, cx| {
+                    project.find_or_create_worktree(pdf_path.clone(), false, cx)
+                })
+                .await
+                .context("Path not found")?;
+            let worktree_id = worktree.update(cx, |worktree, _cx| worktree.id());
+
+            let project_path = ProjectPath {
+                worktree_id,
+                path: relative_path,
+            };
+
+            let pdf_item = project
+                .update(cx, |project, cx| project.open_pdf(project_path, cx))
+                .await?;
+
+            cx.update(
+                |window, cx| Ok(cx.new(|cx| PdfView::new(pdf_item, project, window, cx))),
+            )?
+        })
+    }
+
+    fn cleanup(
+        workspace_id: WorkspaceId,
+        alive_items: Vec<ItemId>,
+        _window: &mut Window,
+        cx: &mut App,
+    ) -> Task<anyhow::Result<()>> {
+        workspace::delete_unloaded_items(
+            alive_items,
+            workspace_id,
+            "pdf_viewers",
+            &persistence::PDF_VIEWER,
+            cx,
+        )
+    }
+
+    fn serialize(
+        &mut self,
+        workspace: &mut Workspace,
+        item_id: ItemId,
+        _closing: bool,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Option<Task<anyhow::Result<()>>> {
+        let workspace_id = workspace.database_id()?;
+        let pdf_path = self.pdf_item.read(cx).abs_path(cx)?;
+
+        Some(cx.background_spawn(async move {
+            persistence::PDF_VIEWER
+                .save_pdf_path(item_id, workspace_id, pdf_path)
+                .await
+        }))
+    }
+
+    fn should_serialize(&self, _event: &Self::Event) -> bool {
+        false
+    }
+}
+
 pub fn init(cx: &mut App) {
     workspace::register_project_item::<PdfView>(cx);
+    workspace::register_serializable_item::<PdfView>(cx);
+}
+
+mod persistence {
+    use std::path::PathBuf;
+    use db::{
+        query,
+        sqlez::{domain::Domain, thread_safe_connection::ThreadSafeConnection},
+        sqlez_macros::sql,
+    };
+    use workspace::{ItemId, WorkspaceDb, WorkspaceId};
+
+    pub struct PdfViewerDb(ThreadSafeConnection);
+
+    impl Domain for PdfViewerDb {
+        const NAME: &str = stringify!(PdfViewerDb);
+        const MIGRATIONS: &[&str] = &[sql!(
+            CREATE TABLE pdf_viewers (
+                workspace_id INTEGER,
+                item_id INTEGER UNIQUE,
+                pdf_path BLOB,
+                PRIMARY KEY(workspace_id, item_id),
+                FOREIGN KEY(workspace_id) REFERENCES workspaces(workspace_id)
+                ON DELETE CASCADE
+            ) STRICT;
+        )];
+    }
+
+    db::static_connection!(PDF_VIEWER, PdfViewerDb, [WorkspaceDb]);
+
+    impl PdfViewerDb {
+        query! {
+            pub async fn save_pdf_path(
+                item_id: ItemId,
+                workspace_id: WorkspaceId,
+                pdf_path: PathBuf
+            ) -> Result<()> {
+                INSERT OR REPLACE INTO pdf_viewers(item_id, workspace_id, pdf_path)
+                VALUES (?, ?, ?)
+            }
+        }
+
+        query! {
+            pub fn get_pdf_path(item_id: ItemId, workspace_id: WorkspaceId) -> Result<Option<PathBuf>> {
+                SELECT pdf_path
+                FROM pdf_viewers
+                WHERE item_id = ? AND workspace_id = ?
+            }
+        }
+    }
 }
