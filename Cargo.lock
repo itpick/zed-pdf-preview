@@ -6440,6 +6440,15 @@ checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
 
 [[package]]
 name = "font-types"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "02a596f5713680923a2080d86de50fe472fb290693cf0f701187a1c8b36996b7"
+dependencies = [
+ "bytemuck",
+]
+
+[[package]]
+name = "font-types"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "511e2c18a516c666d27867d2f9821f76e7d591f762e9fc41dd6cc5c90fe54b0b"
@@ -8070,6 +8079,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "hayro-ccitt"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2db6494c3070f0e3cd9de52ee1a562ba3b2f832cd17b5537180c28294ca088eb"
+
+[[package]]
+name = "hayro-jbig2"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7d7d4358462d3e5aeeb4dcfdea5467821d6551f6cb4607cc037ac99131bc1e32"
+dependencies = [
+ "hayro-ccitt",
+]
+
+[[package]]
+name = "hayro-jpeg2000"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3935d37666b8312aa40c4b2cbd1639d3c6fdc92f86ee52d6b93222e7192df077"
+dependencies = [
+ "log",
+]
+
+[[package]]
 name = "headers"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8656,7 +8689,7 @@ dependencies = [
  "exr",
  "gif",
  "image-webp",
- "moxcms",
+ "moxcms 0.7.7",
  "num-traits",
  "png 0.18.0",
  "qoi",
@@ -8664,8 +8697,8 @@ dependencies = [
  "rayon",
  "rgb",
  "tiff",
- "zune-core",
- "zune-jpeg",
+ "zune-core 0.4.12",
+ "zune-jpeg 0.4.21",
 ]
 
 [[package]]
@@ -10702,6 +10735,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "moxcms"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bb85c154ba489f01b25c0d36ae69a87e4a1c73a72631fc6c0eb6dde34a73e44b"
+dependencies = [
+ "num-traits",
+ "pxfm",
+]
+
+[[package]]
 name = "msvc_spectre_libs"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -12014,6 +12057,27 @@ name = "pciid-parser"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0008e816fcdaf229cdd540e9b6ca2dc4a10d65c31624abb546c6420a02846e61"
+
+[[package]]
+name = "pdf_viewer"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "db",
+ "editor",
+ "file_icons",
+ "gpui",
+ "language",
+ "log",
+ "project",
+ "rpdfium",
+ "serde",
+ "settings",
+ "theme",
+ "ui",
+ "util",
+ "workspace",
+]
 
 [[package]]
 name = "peg"
@@ -13995,6 +14059,16 @@ dependencies = [
 
 [[package]]
 name = "read-fonts"
+version = "0.34.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8941f8e9d5f8ad3aebea330d01ac68c0167600eb31a86ecd86e97be4d13b51f5"
+dependencies = [
+ "bytemuck",
+ "font-types 0.9.0",
+]
+
+[[package]]
+name = "read-fonts"
 version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6717cf23b488adf64b9d711329542ba34de147df262370221940dfabc2c91358"
@@ -14680,6 +14754,161 @@ dependencies = [
  "util",
  "zlog",
  "zstd",
+]
+
+[[package]]
+name = "rpdfium"
+version = "7676.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e4404300ec35ff5576e4db287b1681cdbf781d339c02a53ad209f4a0984fe89"
+dependencies = [
+ "rayon",
+ "rpdfium-codec",
+ "rpdfium-core",
+ "rpdfium-doc",
+ "rpdfium-font",
+ "rpdfium-graphics",
+ "rpdfium-page",
+ "rpdfium-parser",
+ "rpdfium-render",
+ "rpdfium-text",
+ "thiserror 2.0.17",
+]
+
+[[package]]
+name = "rpdfium-codec"
+version = "7676.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d46e8da4827ae6e472bf26bafda77373c0fe04b9d5b9e1b708c134e96377b013"
+dependencies = [
+ "flate2",
+ "hayro-jbig2",
+ "hayro-jpeg2000",
+ "rpdfium-core",
+ "thiserror 2.0.17",
+ "tracing",
+ "zune-jpeg 0.5.13",
+]
+
+[[package]]
+name = "rpdfium-core"
+version = "7676.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dda73ef96f202bf02ac850d4aacc9f4ec3e472762617ac54412d950c23adce1d"
+dependencies = [
+ "getrandom 0.3.4",
+ "smallvec",
+ "thiserror 2.0.17",
+ "tracing",
+ "unicode-bidi",
+]
+
+[[package]]
+name = "rpdfium-doc"
+version = "7676.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b318431af868aa5454c628e22b45fee3185e36537b0213e059dfaf93c1f8fbf"
+dependencies = [
+ "rpdfium-core",
+ "rpdfium-page",
+ "rpdfium-parser",
+ "thiserror 2.0.17",
+]
+
+[[package]]
+name = "rpdfium-font"
+version = "7676.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25a268b9fda50e8333f512eb6a640e18fd893fa51edd79d27f635371aab82f82"
+dependencies = [
+ "dashmap",
+ "read-fonts 0.34.0",
+ "rpdfium-core",
+ "rpdfium-graphics",
+ "rpdfium-parser",
+ "skrifa 0.36.0",
+ "thiserror 2.0.17",
+ "tracing",
+]
+
+[[package]]
+name = "rpdfium-graphics"
+version = "7676.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e05540e0aadb9030a7f71ce226b99663c9ae756dcf863c0fa33bfc748aea147"
+dependencies = [
+ "rpdfium-core",
+]
+
+[[package]]
+name = "rpdfium-page"
+version = "7676.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dc1ec68c5fbfe3d03894831a8a9fcae9fdeababc2872447d355a078e6f0d02ff"
+dependencies = [
+ "rpdfium-codec",
+ "rpdfium-core",
+ "rpdfium-font",
+ "rpdfium-graphics",
+ "rpdfium-parser",
+ "smallvec",
+ "thiserror 2.0.17",
+ "tracing",
+]
+
+[[package]]
+name = "rpdfium-parser"
+version = "7676.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22f95a1634fc99a4fa28635c5b56d2f38361e30e9443f8ebf4262bfa6c4092b7"
+dependencies = [
+ "aes",
+ "cbc",
+ "dashmap",
+ "getrandom 0.3.4",
+ "md-5",
+ "rpdfium-codec",
+ "rpdfium-core",
+ "sha1",
+ "sha2",
+ "smallvec",
+ "thiserror 2.0.17",
+ "tracing",
+]
+
+[[package]]
+name = "rpdfium-render"
+version = "7676.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "15ca9d4ef2098d93df23e3870d70263d054e43f9b6ae88a13e1b2ef8850ee883"
+dependencies = [
+ "dashmap",
+ "moxcms 0.8.1",
+ "rpdfium-codec",
+ "rpdfium-core",
+ "rpdfium-doc",
+ "rpdfium-font",
+ "rpdfium-graphics",
+ "rpdfium-page",
+ "rpdfium-parser",
+ "thiserror 2.0.17",
+ "tiny-skia",
+ "tracing",
+]
+
+[[package]]
+name = "rpdfium-text"
+version = "7676.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dc9ed74064f92380c508ce8323d4fc81c958042f96db2ee2d42d399eaccb5c87"
+dependencies = [
+ "rpdfium-core",
+ "rpdfium-font",
+ "rpdfium-graphics",
+ "rpdfium-page",
+ "rpdfium-parser",
+ "unicode-bidi",
+ "unicode-normalization",
 ]
 
 [[package]]
@@ -16014,6 +16243,16 @@ name = "siphasher"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56199f7ddabf13fe5074ce809e7d3f42b42ae711800501b5b16ea82ad029c39d"
+
+[[package]]
+name = "skrifa"
+version = "0.36.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "37004372610e83ee2a4c69c7d896b41f33da6a3dc1a4fe07dd9b2629a549b1dc"
+dependencies = [
+ "bytemuck",
+ "read-fonts 0.34.0",
+]
 
 [[package]]
 name = "skrifa"
@@ -17596,7 +17835,7 @@ dependencies = [
  "half",
  "quick-error 2.0.1",
  "weezl",
- "zune-jpeg",
+ "zune-jpeg 0.4.21",
 ]
 
 [[package]]
@@ -21956,6 +22195,7 @@ dependencies = [
  "outline_panel",
  "parking_lot",
  "paths",
+ "pdf_viewer",
  "picker",
  "pkg-config",
  "pretty_assertions",
@@ -22452,6 +22692,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f423a2c17029964870cfaabb1f13dfab7d092a62a29a89264f4d36990ca414a"
 
 [[package]]
+name = "zune-core"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb8a0807f7c01457d0379ba880ba6322660448ddebc890ce29bb64da71fb40f9"
+
+[[package]]
 name = "zune-inflate"
 version = "0.2.54"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -22466,7 +22712,16 @@ version = "0.4.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29ce2c8a9384ad323cf564b67da86e21d3cfdff87908bc1223ed5c99bc792713"
 dependencies = [
- "zune-core",
+ "zune-core 0.4.12",
+]
+
+[[package]]
+name = "zune-jpeg"
+version = "0.5.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec5f41c76397b7da451efd19915684f727d7e1d516384ca6bd0ec43ec94de23c"
+dependencies = [
+ "zune-core 0.5.1",
 ]
 
 [[package]]
